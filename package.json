@@ -1,0 +1,21 @@
+{
+  "name": "iotrecording",
+  "version": "0.0.1",
+  "description": "recording data from different iot-nodes and data sources",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "thomas ferl",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^7.6.2",
+    "express": "^4.17.1",
+    "fs-extra": "^11.1.1",
+    "mssql": "^9.1.1",
+    "nodemailer": "^6.9.2",
+    "path": "^0.12.7",
+    "sqlite3": "^5.0.2"
+  }
+}

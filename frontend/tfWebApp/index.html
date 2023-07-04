@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>tfWebApp DEMO_App</title>
+  <link rel="stylesheet" href="./style.css">
+
+  <script>
+   
+   var m = ""; 
+   function init()
+   {
+    import("./main.jis").then( function(module) {m = module.main("tfWebApp","Uhrzeit")} )
+    document.body.innerHTML = m ;
+   } 
+
+</script> 
+
+</head>
+  <body onload="init()"></body>
+</html>

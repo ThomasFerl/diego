@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>tfWebApp</title>
+  <link rel="stylesheet" href="./tfWebApp/style.css">
+  <script>
+   
+   var m = "loading tfWebApp framewotk ... "; 
+   function init()
+   {
+    import("./main.js").then( function(module) 
+                                       {
+                                          m = module.main("DIEGO Cloud");
+                                       } )
+    document.body.innerHTML = m ;
+   } 
+
+</script> 
+
+</head>
+<body onload="init()">
+init tfWebApp ...
+</body>
+</html>

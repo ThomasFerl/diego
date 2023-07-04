@@ -1,0 +1,456 @@
+
+*,*::before, *::after{box-sizing: border-box}
+
+* { font-family    : Arial, Helvetica, sans-serif; }
+
+
+.cssScreen
+{
+  height           : 100%;
+  width            : 100%;
+  background       : #777777;
+  font-size        : 1em;
+}
+
+
+.cssObject
+{
+   left            : 0;
+   top             : 0;
+   position        : absolute; 
+}
+.cssCanvas
+{
+   width:75%;
+   height:75%;
+   margin:2.5%
+}
+
+
+.cssWorkSpaceContainer
+{
+  height          : 100%;
+  width           : 100%;
+  left            : 0px;
+  top             : 0px;
+  position        : absolute;
+  margin          : 0px;
+  padding         : 0px;
+  color           : white;
+  font-size       : 1em;
+  border          : 0;
+  background-color: black;	
+  overflow        : hidden;
+  cursor          : pointer;
+}
+
+.cssWorkSpace
+{
+  height          : 100%;
+  width           : 100%;
+  position        : absolute;
+  left            : 0px;
+  top             : 1em;
+  margin          : 0px;
+  padding         : 0px;
+  color           : black;
+  font-size       : 1em;
+  border          : 1px solid gray;
+  background-color: rgb(179, 179, 179);	
+  overflow        : scroll;
+  cursor          : pointer;
+}
+
+
+.cssWorkSpaceCaption
+{
+ height           : 4em;
+ width            : 100%;
+ position         : absolute;
+ left             : 0px;
+ top              : 0px;
+ margin           : 0px;
+ padding          : 0px;
+ border           : none;
+ color            : 1px solid white;
+ background-color : black;
+ background-image : linear-gradient(to right,black ,rgb(170, 170, 170)	);
+ overflow         : hidden;
+} 
+
+
+.cssCaption1
+{
+   margin         : 0; 
+   padding        : 0; 
+   width          : 100%;
+   font-size      : 1.4em;
+   color          : rgb(247, 241, 241);
+   position       : absolute;
+   left           : 14px;
+   top            : 0.5em;
+}
+
+.cssCaption2
+{
+   margin         : 0; 
+   padding        : 0; 
+   width          : 100%;
+   font-size      : 1em;
+   color          : lightgray;
+   position       : absolute;
+   left           : 14px;
+   top            : 2.5em;
+}
+
+.cssLabel
+{
+   margin-top     : 2px; 
+   margin-left    : 4px; 
+   padding        : 1px; 
+   font-size      : 1em;
+   color          : black;
+}
+
+.cssBoldLabel
+{
+   margin-top     : 2px; 
+   margin-left    : 4px; 
+   padding        : 1px; 
+   font-size      : 1em;
+   font-weight    : bold;
+   color          : black;
+}
+.cssWindowContainer
+{
+   margin-top       : 0px;
+   padding          : 0px;
+   border           : 0px;
+   /*border-radius    : 7px;*/
+   color            : black;
+   background-color : black;
+   box-shadow       : 4px 4px 7px gray;
+   overflow         : hidden;
+   position         : absolute;
+}  
+
+.cssWindow
+{
+   width            : 100%;
+   height           : 100%;
+   margin-top       : 0px;
+   padding          : 0px;
+   border           : 1px black;
+   /*border-radius    : 0px 0px 7px 7px;*/
+   color            : black;
+   background-color : whitesmoke;
+   overflow         : auto;
+   position         : absolute;
+}  
+   
+.cssWindowCaption
+{
+   height           : 1.5em;
+   width            : 100% ;
+   margin           : 0px;
+   padding          : 0px;
+   border           : none;
+   /*border-radius    : 7px 7px 0px 0px; */
+   color            : white;
+   background-color : rgb(0, 0, 0);
+   background-image : linear-gradient(to right,rgb(0, 0, 0) , rgb(113, 113, 247));
+   overflow         : hidden;
+}  
+
+.cssWindowCaptionText{
+   margin-top     : 0.5em; 
+   margin-left    : 1em; 
+   padding        : 0; 
+   font-size      : 1em;
+   color          : white;
+ }  
+
+ .cssCheckBox{
+   width   : 1.5em;
+   height  : 1.5em;
+ }  
+
+
+
+.cssButton01
+{
+    background-color: #5a9900;
+    border: thin solid black;
+    box-shadow: 0 .2em .4em black;
+    width: 7em;
+    height:2em;
+    color: white;
+    margin:0.25em;
+  }
+
+.cssButton01:hover
+ {
+   color: yellow;
+ }
+.cssButton01:active
+  {
+     box-shadow: 0 0 0 black ;
+  }
+
+
+.cssPanel
+{
+  margin            : 1px;
+  padding           : 1px;
+  border            : 1px solid gray;
+  /*border-Radius     : 7px;*/
+  color             : black;
+  background-Color  : rgb(221,221,221);	
+  box-Shadow        : 4px 4px 7px gray;
+  overflow          : auto;
+  display           : flex;
+  flex-Flow         : wrap;
+  float             : left;
+}       
+
+
+.cssWhitePanel
+{
+  margin            : 0.21em;
+  padding           : 0.77em;
+  border            : 1px solid gray;
+  color             : black;
+  background-Color  : white;	
+  align-items       : center;
+  justify-content   : center;
+  overflow          : auto;
+  display           : flex;
+  flex-Flow         : wrap;
+  float             : left;
+} 
+
+
+.cssBlackGradPanel
+{
+   margin            : 0.21em;
+   padding           : 0.77em;
+   border            : 1px solid green;
+   color             : white;
+   background-image  :linear-gradient( rgb(102, 99, 99) , rgb(0, 0, 0)); 
+   align-items       : center;
+   justify-content   : center;
+   overflow          : auto;
+   display           : flex;
+   flex-Flow         : wrap;
+   float             : left;
+ } 
+
+
+.cssvalueListPanel
+{
+   padding           : 0.34em;
+   border            : 0;
+   color             : black;
+   background-Color  : rgb(240, 240, 240);	
+   align-items       : left;
+   justify-content   : left;
+   overflow          : hidden;
+   display           : flex;
+   flex-Flow         : wrap;
+   float             : left;
+ } 
+
+.cssHidePanel
+{
+  margin            : 0.21em;
+  padding           : 0.77em;
+  color             : black;
+  overflow          : hidden;
+  display           : flex;
+  flex-Flow         : wrap;
+  float             : left;
+}    
+
+.cssBevel
+{
+  margin            : 0.21em;
+  padding           : 0.77em;
+  border            : 1px solid gray; 
+  color             : black;
+  overflow          : hidden;
+  display           : flex;
+  flex-Flow         : wrap;
+  float             : left;
+}   
+
+.cssEditField
+{
+   width  : 100%;
+   height : 1.777em;
+   margin-left :0;
+   margin-right :0;
+   margin-top  : 0;
+   padding   : 0.5em; 
+   background: white;
+   color  : #555;
+   border : 1px solid gray;
+   border-radius: 4px;
+}
+
+.cssEditField:hover 
+{
+   background: white;
+   border: 2px solid gray;
+}
+
+ .cssEditField:focus 
+ {
+   background: rgb(185, 245, 198);
+   border: 2px solid black;
+}
+
+
+.cssLabelForInput
+{
+   margin-top     : 0; 
+   margin-left    : 0.5em; 
+   margin-bottom  : 0; 
+
+   padding        : 0px; 
+   font-size      : 0.87em;
+   color          : black;
+}
+
+.cssPanelForInput
+{
+  margin            : 2px;
+  padding           : 0;
+  border            : 1px solid gray;
+  /*border-Radius     : 7px;*/
+  color             : black;
+  background-Color  : rgb(231, 233, 216);	
+  /*box-Shadow        : 4px 4px 7px gray;*/
+  overflow          : hidden;
+  display           : flex;
+  flex-Flow         : wrap;
+  float             : left;
+} 
+
+
+.cssGridLayout
+{
+  border:0px solid gray; 
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  text-align:left;
+}
+
+.cssGridCell
+{
+  border:0px solid gray; 
+  margin:0;
+  padding:0;
+  text-align:left;
+}
+
+
+
+.cssComboBox
+{
+   width  : 100%;
+   height : 2em;
+   margin-left :0;
+   margin-right :0;
+   margin-top  : 0;
+   padding   : 0.1em; 
+   background: white;
+   color  : #555;
+   border : 1px solid gray;
+   border-radius: 4px;
+}
+
+.cssComboBox:hover 
+{
+   background: white;
+   border: 2px solid gray;
+}
+
+ .cssComboBox:focus 
+ {
+   background: rgb(185, 245, 198);
+   border: 2px solid black;
+}
+
+
+/* ---------------- treenode & Co. -------------------------- */
+/* https://www.w3schools.com/cssref/playdemo.php?filename=playcss_justify-content */
+
+.cssTreeViewContainer
+{
+   margin            : 0;
+   padding           : 0;
+   border            : 1px solid rgb(128, 128, 128);
+   background-Color  : rgb(202, 218, 224);	
+   overflow          : auto;
+   /*
+   display           : flex;
+   /*flex-Flow         : wrap; 
+   float             : left;
+   */
+}
+
+.treeNodePanel
+{
+   background:inherit;
+   border    :none;
+   width     :100%;
+   height    :1.7em;
+   padding   :0;
+   margin    :0;
+   overflow  :hidden;
+   font-size : 0.8em;
+    
+}
+
+.treeNode
+{
+   background:rgb(235, 235, 235); 
+   text-align:justify;
+   padding   :0.25em;
+   margin-left:0;
+   margin-top :0.25em;
+   margin-bottom :0.25em;
+   margin-right: 0;
+   height    :2.5em;
+   width     :90%;
+   border    :1px soliid rgb(209, 208, 208);
+   float     :left;  
+   overflow  :hidden;
+   box-sizing: border-box;
+}
+
+
+.treeNode:hover 
+{
+   background: rgb(200, 233, 219);
+   border: 1px solid black;
+}
+
+
+.treeNodeSwitch
+{
+   background:rgb(235, 235, 235); 
+   padding:0.125em;
+   margin-top:0.25em;
+   margin-left:1px;
+   margin-right:0.125em;
+
+   width     :1.5em;
+   height    :1.5em;
+   border    :1px solid rgb(90, 131, 90);
+   overflow  :hidden;
+   float     :left;
+}
+

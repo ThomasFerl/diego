@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>gridTest</title>
+    
+     <script src="d3.js" charset="utf-8"></script> 
+     <script src="tfgrid.js" charset="utf-8"></script> 
+          
+ </head>
+
+<body>
+
+    <script>
+      var request = new XMLHttpRequest();
+          request.onreadystatechange = function ()   
+                                       {
+                                         if (this.readyState == 4 && this.status == 200) 
+                                         {
+                                           var actors = JSON.parse( request.responseText );
+                                           var t      = new THTMLTable(actors);
+                                               t.build( Document.body );
+                                          }      
+                                          else console.warn(request.statusText, request.responseText ) ;
+                                        } 
+          request.open("GET", "http://localhost:8080/actors" );
+          request.send();
+        
+    </script>
+
+
+
+</body>
+</html>

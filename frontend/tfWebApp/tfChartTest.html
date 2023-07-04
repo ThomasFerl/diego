@@ -1,0 +1,28 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas Chart Demo</title>
+
+<script>
+function calculateScaleTicks(t,h,e){var a=h-t,s=Math.pow(10,Math.floor(Math.log(a/e)/Math.LN10)),r=e/a*s,l=Math.floor(Math.log(a/e)/Math.LN10);console.log("1.calculateScaleTicks() rounfFak: "+l),l<0&&(l=2*Math.abs(l)),console.log("2.calculateScaleTicks() rounfFak: "+l),l+=1,l=Math.pow(10,l),console.log("3.calculateScaleTicks() rounfFak: "+l),r<=.15?s*=10:r<=.35?s*=5:r<=.75&&(s*=2);var o=Math.ceil(t/s)*s,n=Math.floor(h/s)*s+.5*s,c=[];for(i=o;i<n;i+=s)c.push(Math.round(i*l)/l);return c}function drawText(t,i,h,e,a,s){s?(t.save(),t.textAlign="center",t.rotate(-Math.PI/2),t.fillText(i,-e,h,10*a),t.restore()):t.fillText(i,h,e,2*a)}tfChart=class{constructor(t,i){this.title="******* Title *******",this.xLabel="X-Achse",this.yLabel="Y-Achse",this.labelFont="1em Arial",this.dataPointFont=".7em Arial",this.canvas=document.getElementById(t),this.ctx=canvas.getContext("2d"),this.chartHeight=this.canvas.getAttribute("height"),this.chartWidth=this.canvas.getAttribute("width"),this.points=i,this.margin={top:40,left:75,right:0,bottom:75},this.drawRect={left:this.margin.left,top:this.margin.top,width:this.chartWidth-this.margin.left-this.margin.right,height:this.chartHeight-this.margin.top-this.margin.bottom,right:this.chartWidth-this.margin.right,bottom:this.chartHeight-this.margin.bottom},this.renderType="lines",this.maxXValue=0,this.maxYValue=0,this.minXValue=1e99,this.minYValue=1e99,this.ratioY=1,this.ratioX=1,this.x0=0,this.y0=0;for(var h=0;h<this.points.length;h++)this.points[h].y>this.maxYValue&&(this.maxYValue=this.points[h].y),this.points[h].x>this.maxXValue&&(this.maxXValue=this.points[h].x),this.points[h].y<this.minYValue&&(this.minYValue=this.points[h].y),this.points[h].x<this.minXValue&&(this.minXValue=this.points[h].x);console.log("maxXValue, maxYValue , minXValue , minYValue "+this.maxXValue+" / "+this.maxYValue+" / "+this.minXValue+" / "+this.minYValue);var e=this.maxXValue-this.minXValue,a=this.maxYValue-this.minYValue;console.log("deltaX, deltaY "+e+"    /    "+a),0!=a&&(this.ratioY=this.drawRect.height/a*.9),0!=e&&(this.ratioX=this.drawRect.width/e*.9),console.log("ratioX, ratioY "+this.ratioX+"    /    "+this.ratioY),this.x0=this.drawRect.left,this.minXValue<0&&(this.x0=this.x0+Math.round(Math.abs(this.ratioX*this.minXValue))),this.y0=this.drawRect.bottom,this.minYValue<0&&(this.y0=this.y0-Math.round(Math.abs(this.ratioY*this.minYValue)))}realToPix(t){return{x:Math.round(t.x*this.ratioX)+this.x0,y:this.y0-Math.round(t.y*this.ratioY)}}pixToReal(t){return{x:(t.x-this.x0)/this.ratioX,y:(this.y0-t.y)/this.ratioY}}drawLine(t,i,h,e){null!=h&&(this.ctx.strokeStyle=h),null!=e&&(this.ctx.lineWidth=e),this.ctx.beginPath(),this.ctx.moveTo(t.x,t.y),this.ctx.lineTo(i.x,i.y),this.ctx.stroke(),this.ctx.closePath()}renderBackground(){var t=this.ctx.createLinearGradient(this.drawRect.left,this.drawRect.top,this.drawRect.right,this.drawRect.bottom);t.addColorStop(0,"#D4D4D4"),t.addColorStop(.2,"#fff"),t.addColorStop(.8,"#fff"),t.addColorStop(1,"#D4D4D4"),this.ctx.fillStyle=t,this.ctx.fillRect(this.drawRect.left,this.drawRect.top,this.drawRect.width,this.drawRect.height),this.ctx.fillStyle="black"}renderText(){this.ctx.font=this.labelFont,this.ctx.textAlign="center";var t=this.ctx.measureText("00").width;this.ctx.fillText(this.title,this.drawRect.width/2+this.drawRect.left,t),this.ctx.fillText(this.xLabel,this.drawRect.width/2+this.drawRect.left,this.chartHeight),this.ctx.save(),this.ctx.rotate(-Math.PI/2),this.ctx.font=this.labelFont;var i=this.ctx.measureText(this.yLabel);this.ctx.fillText(this.yLabel,-this.drawRect.height/2-this.drawRect.top-i.width/2,t/1.7),this.ctx.restore()}renderLinesAndLabels(){if(0!=this.points.length){this.ctx.font=this.dataPointFont;for(var t=this.ctx.measureText("000").width,i="",h=calculateScaleTicks(this.minYValue,this.maxYValue,20),e=0;e<h.length;e++){var a=this.realToPix({x:0,y:h[e]}).y;this.drawLine({x:this.drawRect.left,y:a},{x:this.drawRect.right,y:a},"#e7e7e7",1),i=String(h[e]),this.ctx.textAlign="left",drawText(this.ctx,i,t+7,a,2*t)}var s=calculateScaleTicks(this.minXValue,this.maxXValue,10);for(e=0;e<s.length;e++){var r=this.realToPix({x:s[e],y:0}).x;this.drawLine({x:r,y:this.drawRect.top},{x:r,y:this.drawRect.bottom},"#e7e7e7",1),i=String(s[e]),drawText(this.ctx,i,r+7,this.drawRect.bottom+t,2*t,!0)}this.drawLine({x:this.drawRect.left,y:this.y0},{x:this.drawRect.right,y:this.y0},"gray",3),this.drawLine({x:this.x0,y:this.drawRect.top},{x:this.x0,y:this.drawRect.bottom},"gray",3)}}renderData(){if(!(this.points.length<2))for(var t=1;t<this.points.length;t++)this.drawLine(this.realToPix(this.points[t-1]),this.realToPix(this.points[t]),"red",1)}render(){this.renderBackground(),this.renderText(),this.renderLinesAndLabels(),this.renderData()}};
+</script>
+    
+<script>
+
+    function testChart() 
+    {
+      var dataPoints = [];
+      for(var i=-100; i<=-0.1; i++) dataPoints.push( {x:i , y:1/i } )
+      var chart = new tfChart( 'canvas' , dataPoints );
+          chart.render();
+    }
+
+</script>
+
+</head>
+<body style="margin-left:50px;margin-top:50px;" onload="testChart()">
+    <canvas id="canvas" width="800" height="600"></canvas>
+</body>
+</html>
+
