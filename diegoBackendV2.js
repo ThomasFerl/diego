@@ -31,8 +31,8 @@ function formatDateTime( unixTimestamp )
   var hh = dt.getHours();
   var mn = dt.getMinutes();
   var ss = dt.getSeconds();
-  var mm = dt.getMonth();
-  var dd = dt.getDay();
+  var mm = dt.getMonth()+1;
+  var dd = dt.getDay()+2;
   var yy = dt.getFullYear();
 
   if(hh < 10){hh = '0'+hh;}
@@ -41,7 +41,7 @@ function formatDateTime( unixTimestamp )
   if(mm < 10){mm = '0'+mm;}
   if(dd < 10){dd = '0'+dd;}
 
-  return  (hh+':'+mm+':'+ss+' '+dd+'. '+mm+'. '+yy);
+  return  (dd+'.'+mm+'.'+yy+' '+hh+':'+mn+':'+ss);
 }
 
 
@@ -387,55 +387,70 @@ function ping( req , res )
 } 
 
 
-function selectMSSQL( req , res )
+
+async function selectMSSQL( req , res )
 {
-    DB_mssql.runSQL( mssqlDB , "select * from rawValues" , {} , ( err , queryResult )=> 
-    {
-      console.log("testMSSQL.callBack");
-      console.log("queryResult: " + queryResult );
+      console.log("dive ito testMSSQL..."); 
+      
+      var queryResult = await DB_mssql.runSQL( mssqlDB , "select * from rawValues" , {} ); 
+          
+      console.log("return from runSQL() with result:"); 
+      console.dir(queryResult);
 
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Content-Type', 'application/json');
       res.send( queryResult );
-    } );
-} 
-
-
-function insertMSSQL( req , res )
-{
-    DB_mssql.runSQL( mssqlDB , "Insert into rawValues(dt,source,chanel,value,unit) values(@dt,@source,@chanel,@value,@unit)" , {dt:"",source:"TestX",chanel:"chanX",value:815,unit:"kWh"} , ( err , queryResult )=> 
-    {
-      console.log("testMSSQL.callBack");
-      console.log("queryResult: " + queryResult );
-
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Content-Type', 'application/json');
-      res.send( queryResult );
-    } );
-} 
-
-
-function distributeMSSQL( req , res )
-{
-  DB.fetchQuery( sqliteDB , 'Select * from rawValues order by dt,device' , [] , 'JSON' );
-  res.send("OK");
-  var i = 0;
-  var items = JSON.parse(DB.last_dbResult);
-  items.forEach(item => 
-  {
-    i++;
-    console.log('copy item '+ i + ' to mssql');
-    console.log('busy:'+DB_mssql.busy);
-    DB_mssql.runSQL( mssqlDB , "Insert into rawValues(dt,source,chanel,value,unit) values(@dt,@source,@chanel,@value,@unit)" , 
-                    {dt:formatDateTime(item.dt*1000), source:item.device ,chanel:item.chanel,value:item.value,unit:"imp"} , 
-                    ( err , queryResult )=>{if(err) console.error(err); else console.log('..ok')} );
     
-    console.log('busy:'+DB_mssql.busy);                
-    delay(400);       
-  });
+} 
+
+async function insertMSSQL( req , res )
+{
+  var queryResult = await DB_mssql.runSQL( mssqlDB , "Insert into rawValues(dt,source,chanel,value,unit) values(@dt,@source,@chanel,@value,@unit)" , {dt:"",source:"TestX",chanel:"chanX",value:815,unit:"kWh"});
+    
+      console.log("insertMSSQL Result");
+      console.log("queryResult: " + queryResult );
+
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Content-Type', 'application/json');
+      res.send( queryResult );
+    
+} 
+
+async function distributeMSSQL(req, res) 
+{
+  if (DB.fetchQuery(sqliteDB, 'Select * from rawValues where id not in(Select ID_record from distributed_mssql) order by dt,device', [], 'JSON')) 
+  {
+    res.send("OK");
+  } else {
+           res.send("ERROR: Fehler bei Abfrage der Messdaten aus sqlite-DB");
+           return;
+         }
+
+  try {
+    console.log('try to parse JSON ...');
+    var items = JSON.parse(DB.last_dbResult);
+    console.log('...ok');
+  } catch (err) {
+                 console.error('parse Error:' + err);
+                 return;
+                }
+
+  for (var i = 0; i < items.length; i++) 
+  {
+    console.log('copy item ' + (i + 1) + ' to mssql');
+    var item = items[i];
+
+    var queryResult = await DB_mssql.runSQL(mssqlDB, "Insert into rawValues(dt,source,chanel,value,unit) values(@dt,@source,@chanel,@value,@unit)",
+      { dt: formatDateTime(item.dt * 1000), source: item.device, chanel: item.chanel, value: item.value, unit: "imp" });
+
+      if (queryResult.rowsAffected > 0)
+      {
+        DB.runSQL(sqliteDB,'Insert into distributed_mssql(id_record) values(?)',[item.ID]);
+      }
+
+    console.log(queryResult);
+  }
 }
-
-
 
 
 

@@ -8,8 +8,55 @@ module.exports.last_dbResult = "";
 module.exports.busy          = false;
 
 
+async function runSQL( db , sqlStatement , params )
+{
+ try{
+      console.log("runSQL : " + sqlStatement );
+      console.log("DB     : " + JSON.stringify(db) );
+      console.log("param  : " + JSON.stringify(params) );
+  
+      var config = {
+                user     : db.userName,
+                password : db.pwd,
+                server   : db.Server,
+                database : db.Database,
+                stream   : false, 
+                options  : {
+                             trustedConnection     : true ,
+                             encrypt               : true , // Wenn du eine verschlüsselte Verbindung verwendest (empfohlen)
+                             trustServerCertificate: true // Deaktiviere die Validierung des Zertifikats
+                           }
+                    }
+      console.log("try to connect...");
+      await mssql.connect(config);
+      console.log("successful connected ");
 
-module.exports.runSQL=( db , sqlStatement , params , callBack )=>
+      console.log("ggf parameter ?");
+      var request = new mssql.Request();
+      if(params)
+      {
+       for(var key in params)
+       {
+         request.input(key , params[key] );
+         console.log('-> ' + key + ' = ' + params[key] );
+       }
+      }
+      console.log("runQuery...");
+      var result = await request.query(sqlStatement);
+
+      if(result.recordset) return result.recordset;
+      else                 return {rowsAffected:result.rowsAffected};
+     }
+     catch(err) { console.error(err) ; return {error:true , errMsg:err}; }   
+}
+  
+
+module.exports.runSQL  = runSQL;
+
+
+
+
+module.exports.___runSQL=( db , sqlStatement , params , callBack )=>
 { 
   console.log("runSQL : " + sqlStatement );
   console.log("DB     : " + JSON.stringify(db) );
