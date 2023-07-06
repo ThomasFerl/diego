@@ -5,6 +5,10 @@ const path        = require('path');
 const { networkInterfaces } = require('os');
 const { Console } = require('console');
 
+// Messdaten-Verteilung
+const diegoMQTT   = require('./diegoMQTT');
+
+
 // Messdaten - Speicherung
 const DB          = require('./DB');
 const sqliteDB    = './diegoValues.db';
@@ -21,13 +25,22 @@ const port        = 4007;
 var staticPath    = path.join (__dirname, 'frontend' );
 console.log("static Path: " + staticPath );
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// MQTT initialisieren ....
+var mqttPublishing  = false;
+var mqttRefract     = 60;  // Sekunden
+var mqttLastPublish = 0;
+diegoMQTT.init();
+diegoMQTT.registerMQTTmessageHandler( diegoMQTT.topic_committValues  , callBack_onCommittValues  );
+diegoMQTT.registerMQTTmessageHandler( diegoMQTT.topic_restartCommitt , callBack_onRestartCommitt );
+diegoMQTT.registerMQTTmessageHandler( diegoMQTT.topic_forceCommitt   , callBack_onForceCommit    );
+
 
 function formatDateTime( unixTimestamp )
 {
-  var dt = new Date(unixTimestamp);
+  var dt = new Date(now());
+  
+  if(unixTimestamp) dt = new Date(unixTimestamp)
+  
   var hh = dt.getHours();
   var mn = dt.getMinutes();
   var ss = dt.getSeconds();
@@ -47,7 +60,7 @@ function formatDateTime( unixTimestamp )
 
 function now()
 {
-  return  formatDateTime( Date.now() )
+  return  formatDateTime();
 }
 
 
@@ -452,6 +465,112 @@ async function distributeMSSQL(req, res)
   }
 }
 
+// -------------------------------------------------------------------------------------------------------------------------------------------------
+
+function callBack_onCommittValues( message )
+// Der Versand der Daten wird von uns selbst aboniert.
+// Der Empfang eines Datensatzes kann als Bestätigung aufgefasst werden, dass die Daten beim Broker angekommen sind
+{
+  console.log("MQTT-Message => onCommittValues ");
+  try { 
+         var item = JSON.parse(message) 
+         console.dir( item );
+         if (item.ID)  DB.runSQL(sqliteDB,'Insert into distributed_mqtt(id_record) values(?)',[item.ID]);
+        }
+  catch(err) {console.error(err)}
+}
+
+
+function callBack_onRestartCommitt( message )
+{
+  console.log("MQTT-Message => onRestartCommitt");
+  try { 
+    var msg = JSON.parse(message) 
+    console.dir( msg );
+    if (msg.cmd=="reset") DB.runSQL(sqliteDB,'delete from distributed_mqtt' , [] );
+   }
+catch(err) {console.error(err)}
+}
+
+
+function callBack_onForceCommit( message )
+{
+  console.log("MQTT-Message => onForceCommit");
+  try { 
+    var msg = JSON.parse(message) 
+    console.dir( msg );
+    if (msg.cmd=="committ") distributeMQTT();
+   }
+catch(err) {console.error(err)}
+}
+
+
+function mqttPing()
+{
+  diegoMQTT.publish(diegoMQTT.topic_committValues , {dt:now(), msg:"Test PING"} );
+}
+
+
+
+
+
+function distributeMQTT() 
+{
+  var thisMoment = Date.now() / 1000;
+  
+  if((thisMoment-mqttLastPublish)<mqttRefract) return;
+
+  mqttLastPublish = thisMoment;
+   
+  console.log("Distribute MQTT");
+  console.log("try to find new records ...");
+
+  if (!DB.fetchQuery(sqliteDB, 'Select * from rawValues where id not in(Select ID_record from distributed_mqtt) order by dt,device', [], 'JSON'))
+  { 
+    console.error(DB.lastErrMsg); 
+    return;
+  }
+
+  try {
+    console.log('try to parse JSON ...');
+    var items = JSON.parse(DB.last_dbResult);
+    console.log('...ok');
+  } catch (err) {
+                 console.error('parse Error:' + err);
+                 return;
+                }
+
+  for (var i = 0; i < items.length; i++) 
+  {
+    console.log('publish item ' + (i + 1) + ' to MQTT-Brooker');
+    var item = items[i];
+        mq
+        DB.runSQL(sqliteDB,'Insert into distributed_mqtt(id_record) values(?)',[item.ID]);
+  }
+}
+
+
+
+function mqttStartPublishing(req, res) 
+{
+  if(mqttPublishing) 
+  {
+    res.send("Publish process is alredy running");
+    return;
+  }
+  else
+       {
+        res.send("start Publishing ...");
+        mqttPublishing = true;
+       }
+}      
+
+// jede Sekunde prüfen, ob volle Stunde erreicht wurde ....
+setInterval( ()=>{
+                   var dt = new Date(now());
+                   if(dt.getMinutes()==0) distributeMQTT();
+                 } , 1000 
+            );  
 
 
 // CORS
@@ -498,6 +617,8 @@ httpApp.get('/ping'                                                             
 
 httpApp.get('/pragma/:table'                                                       , pragma );
 
+httpApp.get('/mqttPing'                                                            , mqttPing );
+httpApp.get('/mqttStartPublishing'                                                 , mqttStartPublishing );
 
 //-----------------------------------------------------------------------------------------------
 httpApp.get('/lsMSSQL'                                                            , selectMSSQL  );
