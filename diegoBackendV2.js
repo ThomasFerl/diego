@@ -37,7 +37,7 @@ diegoMQTT.registerMQTTmessageHandler( diegoMQTT.topic_forceCommitt   , callBack_
 
 function formatDateTime( unixTimestamp )
 {
-  var dt = new Date(now());
+  var dt = new Date( Date.now  );
   
   if(unixTimestamp) dt = new Date(unixTimestamp)
   
@@ -509,7 +509,7 @@ function mqttPing()
 
 function distributeMQTT() 
 {
-  var thisMoment = Date.now() / 1000;
+  var thisMoment = Date.now / 1000;
   
   if((thisMoment-mqttLastPublish)<mqttRefract) return;
 
@@ -560,7 +560,7 @@ function mqttStartPublishing(req, res)
 
 // jede Sekunde prüfen, ob volle Stunde erreicht wurde ....
 setInterval( ()=>{
-                   var dt = new Date(now());
+                   var dt = new Date( Date.now );
                    if(dt.getMinutes()==0) distributeMQTT();
                  } , 1000 
             );  
