@@ -58,13 +58,6 @@ function formatDateTime( unixTimestamp )
 }
 
 
-function now()
-{
-  return  formatDateTime();
-}
-
-
-
 function insertRecord ( req , res )
 // httpApp.get('/txiput/:device/:chanel/:timeStamp/:value'   
 {
@@ -507,7 +500,7 @@ catch(err) {console.error(err)}
 
 function mqttPing()
 {
-  diegoMQTT.publish(diegoMQTT.topic_committValues , {dt:now(), msg:"Test PING"} );
+  diegoMQTT.publish(diegoMQTT.topic_committValues , {dt:formatDateTime(), msg:"Test PING"} );
 }
 
 
@@ -576,7 +569,7 @@ setInterval( ()=>{
 // CORS
 httpApp.use(( req , res , next ) =>
 {
-  console.log("request from: " + req.hostname + " (IP: "+req.ip+")" + "  at: " + now() );
+  console.log("request from: " + req.hostname + " (IP: "+req.ip+")" + "  at: " + formatDateTime() );
   console.log("URL         : " + req.originalUrl);
   console.log("Params      : " + JSON.stringify(req.params));
   console.log("Query       : " + JSON.stringify(req.query));
