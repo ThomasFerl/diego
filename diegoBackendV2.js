@@ -29,6 +29,9 @@ console.log("static Path: " + staticPath );
 var mqttPublishing  = false;
 var mqttRefract     = 60;  // Sekunden
 var mqttLastPublish = 0;
+var mqttInProcess   = 0;
+var mqttItems       = {};
+
 diegoMQTT.init();
 diegoMQTT.registerMQTTmessageHandler( diegoMQTT.topic_committValues  , callBack_onCommittValues  );
 diegoMQTT.registerMQTTmessageHandler( diegoMQTT.topic_restartCommitt , callBack_onRestartCommitt );
@@ -37,15 +40,15 @@ diegoMQTT.registerMQTTmessageHandler( diegoMQTT.topic_forceCommitt   , callBack_
 
 function formatDateTime( unixTimestamp )
 {
-  var dt = new Date( Date.now  );
+  var dt = new Date();
   
   if(unixTimestamp) dt = new Date(unixTimestamp)
   
   var hh = dt.getHours();
   var mn = dt.getMinutes();
   var ss = dt.getSeconds();
-  var mm = dt.getMonth()+1;
-  var dd = dt.getDay()+2;
+  var mm = dt.getMonth() + 1; // Months are zero-indexed, so we add 1
+  var dd = dt.getDate(); // Use getDate() instead of getDay()
   var yy = dt.getFullYear();
 
   if(hh < 10){hh = '0'+hh;}
@@ -56,6 +59,16 @@ function formatDateTime( unixTimestamp )
 
   return  (dd+'.'+mm+'.'+yy+' '+hh+':'+mn+':'+ss);
 }
+
+
+function uxDateTimeToMS( unixTimestamp )
+{
+  var dt = new Date(unixTimestamp);
+  var t  = dt.valueOf() + 2208992400000;
+  return (t / 60 / 60 / 24) + 2; 
+}
+
+
 
 
 function insertRecord ( req , res )
@@ -137,7 +150,6 @@ function selectRecords(req , res )
 }
 
                    
-
 function selectRecords_byYear(req , res )
 // /lsByYear/:device/:chanel/:year/:groupBy/:format'   
 // Bsp.: http://emssvrservice02:4002/lsByYear/DIEGOtest/IMP1_IMP1/2023/*/JSON
@@ -233,7 +245,6 @@ function selectRecords_byMonth(req , res )
 }
 
 
-
 function selectRecords_byDay(req , res )
  // Bsp.: http://emssvrservice02:4002/lsByMonth/DIEGOtest/IMP1_IMP1/2023/03/*/JSON 
 {
@@ -286,7 +297,6 @@ function selectRecords_byDay(req , res )
 }
 
 
-
 function selectDevices (req , res )
 {
   var format='JSON';
@@ -304,7 +314,6 @@ function selectDevices (req , res )
     res.send( "ERROR => " + DB.last_ErrMsg );
   }
 }
-
 
 
 function selectChanels ( req , res )
@@ -326,7 +335,6 @@ function selectChanels ( req , res )
 }
 
 
-
 function deviceState (req , res )  
 //state/:device/:chanel'    
 {
@@ -345,6 +353,7 @@ function deviceState (req , res )
   }
 
 }
+
 
 function pragma( req , res )
 {
@@ -393,25 +402,25 @@ function ping( req , res )
 } 
 
 
+//-------------------------------------------DISTRIBUTING------------------------------------------------------------
+//  MSSQL
+//-------------------------------------------------------------------------------------------------------------------
+
 
 async function selectMSSQL( req , res )
 {
-      console.log("dive ito testMSSQL..."); 
-      
-      var queryResult = await DB_mssql.runSQL( mssqlDB , "select * from rawValues" , {} ); 
-          
-      console.log("return from runSQL() with result:"); 
-      console.dir(queryResult);
-
+  var queryResult = await DB_mssql.runSQL( mssqlDB , "Select * From rawValues Order by dt,source" , []);
+    
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Content-Type', 'application/json');
       res.send( queryResult );
     
 } 
 
+
 async function insertMSSQL( req , res )
 {
-  var queryResult = await DB_mssql.runSQL( mssqlDB , "Insert into rawValues(dt,source,chanel,value,unit) values(@dt,@source,@chanel,@value,@unit)" , {dt:"",source:"TestX",chanel:"chanX",value:815,unit:"kWh"});
+  var queryResult = await DB_mssql.runSQL( mssqlDB , "Insert into rawValues(dt,source,chanel,value,unit) values(@dt,@source,@chanel,@value,@unit)" , {dt:formatDateTime(),source:"TestX",chanel:"chanX",value:815,unit:"kWh"});
     
       console.log("insertMSSQL Result");
       console.log("queryResult: " + queryResult );
@@ -424,11 +433,16 @@ async function insertMSSQL( req , res )
 
 async function distributeMSSQL(req, res) 
 {
+  
+  res.send("BREAK");
+  return;
+  
+  
   if (DB.fetchQuery(sqliteDB, 'Select * from rawValues where id not in(Select ID_record from distributed_mssql) order by dt,device', [], 'JSON')) 
   {
-    res.send("OK");
+    if(res) res.send("OK");
   } else {
-           res.send("ERROR: Fehler bei Abfrage der Messdaten aus sqlite-DB");
+           if(res) res.send("ERROR: Fehler bei Abfrage der Messdaten aus sqlite-DB");
            return;
          }
 
@@ -447,7 +461,7 @@ async function distributeMSSQL(req, res)
     var item = items[i];
 
     var queryResult = await DB_mssql.runSQL(mssqlDB, "Insert into rawValues(dt,source,chanel,value,unit) values(@dt,@source,@chanel,@value,@unit)",
-      { dt: formatDateTime(item.dt * 1000), source: item.device, chanel: item.chanel, value: item.value, unit: "imp" });
+      { dt: uxDateTimeToMS(item.dt), source: item.device, chanel: item.chanel, value: item.value, unit: "imp" });
 
       if (queryResult.rowsAffected > 0)
       {
@@ -458,17 +472,33 @@ async function distributeMSSQL(req, res)
   }
 }
 
-// -------------------------------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------DISTRIBUTING------------------------------------------------------------
+//  MQTT
+//-------------------------------------------------------------------------------------------------------------------
+
 
 function callBack_onCommittValues( message )
 // Der Versand der Daten wird von uns selbst aboniert.
 // Der Empfang eines Datensatzes kann als Bestätigung aufgefasst werden, dass die Daten beim Broker angekommen sind
 {
-  console.log("MQTT-Message => onCommittValues ");
+  console.log("MQTT-Message => onCommittValues("+message+")");
   try { 
-         var item = JSON.parse(message) 
+       try { var item = JSON.parse(message) }
+       catch(err) {console.error("JSON.parse-Error:" + err) ; return } 
+         
          console.dir( item );
+         console.log( item ); 
+        
+         // debug:
+         // WARUM muss 2x geparst werden 
+         item = JSON.parse(item);
+
+         console.log( "Item analysieren ..." );
+         for (var key in item) 
+         console.log("key: " + key + " -> " + item[key]);
+
          if (item.ID)  DB.runSQL(sqliteDB,'Insert into distributed_mqtt(id_record) values(?)',[item.ID]);
+         else console.log("Datensatz kann nicht gespeichert werden, da item.ID nicht verfügbar ist....")
         }
   catch(err) {console.error(err)}
 }
@@ -476,11 +506,13 @@ function callBack_onCommittValues( message )
 
 function callBack_onRestartCommitt( message )
 {
-  console.log("MQTT-Message => onRestartCommitt");
+  console.log("MQTT-Message => onRestartCommitt("+message+")");
   try { 
-    var msg = JSON.parse(message) 
+    var msg = JSON.parse(message);
+        msg = JSON.parse(msg); 
     console.dir( msg );
     if (msg.cmd=="reset") DB.runSQL(sqliteDB,'delete from distributed_mqtt' , [] );
+    else console.log("Es wurde reset angefordert aber das Commando (cmd) ist ungültig ... !");   
    }
 catch(err) {console.error(err)}
 }
@@ -490,9 +522,14 @@ function callBack_onForceCommit( message )
 {
   console.log("MQTT-Message => onForceCommit");
   try { 
-    var msg = JSON.parse(message) 
+    var msg = JSON.parse(message)
+        msg = JSON.parse(msg); 
     console.dir( msg );
-    if (msg.cmd=="committ") distributeMQTT();
+    if (msg.cmd=="committ") 
+    {
+      mqttPublishing = true;
+      prepareDistribution();
+    }  
    }
 catch(err) {console.error(err)}
 }
@@ -504,18 +541,17 @@ function mqttPing()
 }
 
 
-
-
-
-function distributeMQTT() 
+function prepareDistribution()
 {
-  var thisMoment = Date.now / 1000;
+  if(mqttItems.length>0) return;
   
+  var thisMoment = Date.now / 1000;
   if((thisMoment-mqttLastPublish)<mqttRefract) return;
 
   mqttLastPublish = thisMoment;
+  mqttInProcess   = 0;
    
-  console.log("Distribute MQTT");
+  console.log("prepare Distributing MQTT");
   console.log("try to find new records ...");
 
   if (!DB.fetchQuery(sqliteDB, 'Select * from rawValues where id not in(Select ID_record from distributed_mqtt) order by dt,device', [], 'JSON'))
@@ -526,19 +562,28 @@ function distributeMQTT()
 
   try {
     console.log('try to parse JSON ...');
-    var items = JSON.parse(DB.last_dbResult);
+    //console.log(DB.last_dbResult);
+    mqttItems = JSON.parse(DB.last_dbResult);
     console.log('...ok');
   } catch (err) {
                  console.error('parse Error:' + err);
                  return;
                 }
+}
 
-  for (var i = 0; i < items.length; i++) 
+
+
+function distributeMQTT() 
+{
+  if(mqttItems.length>0)
   {
-    console.log('publish item ' + (i + 1) + ' to MQTT-Brooker');
-    var item = items[i];
-        mq
-        DB.runSQL(sqliteDB,'Insert into distributed_mqtt(id_record) values(?)',[item.ID]);
+    mqttInProcess++;
+    console.log('try to distribute item No : ' + mqttInProcess + " pending items: " + mqttItems.length );
+
+    var item = mqttItems[0]; 
+               mqttItems.shift();
+              
+    diegoMQTT.publish( diegoMQTT.topic_committValues , JSON.stringify(item) )           
   }
 }
 
@@ -555,13 +600,36 @@ function mqttStartPublishing(req, res)
        {
         res.send("start Publishing ...");
         mqttPublishing = true;
+        prepareDistribution();
        }
-}      
+}    
+
+
+
+
+function mqttResetPublishing(req, res) 
+{
+   res.send("Reset publishing queue !");
+   diegoMQTT.publish( diegoMQTT.topic_restartCommitt , JSON.stringify( {cmd:"reset"} ) )           
+}  
+
+
 
 // jede Sekunde prüfen, ob volle Stunde erreicht wurde ....
 setInterval( ()=>{
-                   var dt = new Date( Date.now );
-                   if(dt.getMinutes()==0) distributeMQTT();
+                   var dt = new Date();
+                   if(dt.getMinutes()==0)
+                   {
+                    // jede volle Stunde wird ein "publishing" vorbereitet ...
+                    prepareDistribution(); 
+                    
+                    // und die neuen Daten an den MSSQL-Server gesendet
+                    distributeMSSQL();
+                   } 
+                   
+                   // sekündlich wird das eigentliche pubnlishing durchgeführt, sofern im "Sendepuffer" Daten sind....
+                   distributeMQTT();
+
                  } , 1000 
             );  
 
@@ -612,6 +680,7 @@ httpApp.get('/pragma/:table'                                                    
 
 httpApp.get('/mqttPing'                                                            , mqttPing );
 httpApp.get('/mqttStartPublishing'                                                 , mqttStartPublishing );
+httpApp.get('/mqttResetPublishing'                                                 , mqttResetPublishing );
 
 //-----------------------------------------------------------------------------------------------
 httpApp.get('/lsMSSQL'                                                            , selectMSSQL  );
